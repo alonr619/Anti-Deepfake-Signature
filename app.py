@@ -1,11 +1,11 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 import requests
 import os
 from PIL import Image
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
-
+from helper import add_text_as_metadata
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -13,8 +13,8 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'}
-ALLOWED_TEXT_EXTENSIONS = {'txt', 'md', 'doc', 'docx'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+ALLOWED_TEXT_EXTENSIONS = {'txt'}
 
 def allowed_file(filename, allowed_extensions):
     return '.' in filename and \
@@ -48,12 +48,8 @@ def sign_post():
         hash = SHA256.new(img_data)
         signer = pkcs1_15.new(private_key)
         signature = signer.sign(hash)
-        print(str(signature))
-        return jsonify({
-            'status': 'success',
-            'response_status': 200,
-            'response_data': str(signature)
-        })
+        add_text_as_metadata(img, signature, str(image_file.filename))
+        return send_file(f"uploads/signed_{image_file.filename}", as_attachment=True, download_name=f"signed_{image_file.filename}", mimetype=f'image/{img.format}', max_age=0)
         
     except Exception as e:
         return jsonify({'error': f'Error processing files: {str(e)}'}), 500

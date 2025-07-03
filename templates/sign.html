@@ -201,19 +201,20 @@
             result.style.display = 'none';
             
             try {
-                const response = await fetch('/sign', {
+                fetch('/sign', {
                     method: 'POST',
                     body: formData
+                })
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `signed_${imageFile.name}`;
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
                 });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    showResult(`Success! Response status: ${data.response_status}`, 'success');
-                    console.log(data.response_data)
-                } else {
-                    showResult(`Error: ${data.error}`, 'error');
-                }
             } catch (error) {
                 showResult(`Network error: ${error.message}`, 'error');
             } finally {
