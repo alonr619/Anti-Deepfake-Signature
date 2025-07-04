@@ -5,8 +5,8 @@ from PIL import Image
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
-from helper import save_image_with_metadata, get_hash_from_image, verify_image_signature, get_signature_from_hash
-app = Flask(__name__)
+from helper import save_image_with_metadata, get_hash_from_image, verify_image_signature, get_signature_from_hash, generate_rsa_key_pair
+app = Flask(__name__, static_folder='static')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
@@ -14,11 +14,27 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-ALLOWED_TEXT_EXTENSIONS = {'txt'}
+ALLOWED_TEXT_EXTENSIONS = {'txt', 'pem', 'key'}
 
 def allowed_file(filename, allowed_extensions):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/generate-keys', methods=['POST'])
+def generate_keys():
+    try:
+        private_key, public_key = generate_rsa_key_pair()
+        return jsonify({
+            'status': 'success',
+            'private_key': private_key,
+            'public_key': public_key
+        })
+    except Exception as e:
+        return jsonify({'error': f'Error generating keys: {str(e)}'}), 500
 
 @app.route('/sign', methods=['GET'])
 def sign_get():

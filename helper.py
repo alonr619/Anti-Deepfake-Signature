@@ -1,4 +1,3 @@
-from inspect import signature
 from PIL import Image, PngImagePlugin
 import base64
 import piexif
@@ -51,3 +50,12 @@ def verify_image_signature(image: Image.Image, public_key: RSA.RsaKey):
         return True
     except Exception as e:
         return False
+
+def generate_rsa_key_pair(key_size: int = 2048) -> tuple[str, str]:
+    private_key = RSA.generate(key_size)
+    public_key = private_key.publickey()
+    
+    private_key_pem = private_key.export_key().decode('utf-8')
+    public_key_pem = public_key.export_key().decode('utf-8')
+    
+    return private_key_pem, public_key_pem
