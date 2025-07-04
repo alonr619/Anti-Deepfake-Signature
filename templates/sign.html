@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Image</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/forms.js') }}" defer></script>
 </head>
 <body>
     <div class="container">
@@ -41,61 +42,5 @@
             <a href="/verify" class="nav-btn">Verify Image</a>
         </div>
     </div>
-
-    <script>
-        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData();
-            const imageFile = document.getElementById('image').files[0];
-            const textFile = document.getElementById('text_file').files[0];
-            
-            if (!imageFile || !textFile) {
-                showResult('Please select both an image and a private key file.', 'error');
-                return;
-            }
-            
-            formData.append('image', imageFile);
-            formData.append('text_file', textFile);
-            
-            const submitBtn = document.getElementById('submitBtn');
-            const loading = document.getElementById('loading');
-            const result = document.getElementById('result');
-            
-            // Show loading state
-            submitBtn.disabled = true;
-            loading.style.display = 'block';
-            result.style.display = 'none';
-            
-            try {
-                fetch('/sign', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.blob())
-                .then(blob => {
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `signed_${imageFile.name}`;
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(url);
-                });
-            } catch (error) {
-                showResult(`Network error: ${error.message}`, 'error');
-            } finally {
-                submitBtn.disabled = false;
-                loading.style.display = 'none';
-            }
-        });
-        
-        function showResult(message, type) {
-            const result = document.getElementById('result');
-            result.textContent = message;
-            result.className = `result ${type}`;
-            result.style.display = 'block';
-        }
-    </script>
 </body>
 </html> 
