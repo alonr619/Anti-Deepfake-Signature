@@ -36,7 +36,6 @@ def retrieve_signature_from_image(image: Image.Image) -> bytes:
     elif image.format == 'JPEG' or image.format == 'JPG':
         exif_dict = piexif.load(image.info.get('exif', b""))
         signature_b64 = exif_dict['0th'][piexif.ImageIFD.ImageDescription]
-        print(signature_b64)
         return base64.b64decode(signature_b64)
     else:
         raise ValueError(f'Unsupported image format: {image.format}')

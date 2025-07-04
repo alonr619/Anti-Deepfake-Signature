@@ -1,11 +1,9 @@
 from flask import Flask, render_template, request, jsonify, send_file
-import requests
 import os
 from PIL import Image
-from Crypto.Signature import pkcs1_15
-from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from helper import save_image_with_metadata, get_hash_from_image, verify_image_signature, get_signature_from_hash, generate_rsa_key_pair
+
 app = Flask(__name__, static_folder='static')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -96,9 +94,16 @@ def sign_post():
         hash = get_hash_from_image(img)
         print(hash)
         signature = get_signature_from_hash(hash, private_key)
-        print(signature)
         save_image_with_metadata(img, signature, str(image_file.filename))
-        return send_file(f"uploads/signed_{image_file.filename}", as_attachment=True, download_name=f"signed_{image_file.filename}", mimetype=f'image/{img.format}', max_age=0)
+        
+        response = send_file(f"uploads/signed_{image_file.filename}", as_attachment=True, download_name=f"signed_{image_file.filename}", mimetype=f'image/{img.format}', max_age=0)
+        
+        try:
+            os.remove(f"uploads/signed_{image_file.filename}")
+        except OSError as e:
+            print(f"Warning: Could not delete signed image: {e}")
+        
+        return response
         
     except Exception as e:
         return jsonify({'error': f'Error processing files: {str(e)}'}), 500
