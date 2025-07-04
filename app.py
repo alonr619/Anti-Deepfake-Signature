@@ -5,7 +5,7 @@ from PIL import Image
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
-from helper import add_text_as_metadata, get_hash_from_image, verify_signature
+from helper import save_image_with_metadata, get_hash_from_image, verify_image_signature, get_signature_from_hash
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -48,7 +48,7 @@ def verify_post():
     try:
         img = Image.open(image_file)
         public_key = RSA.import_key(public_key_file.read().decode('utf-8'))
-        verified = verify_signature(img, public_key)
+        verified = verify_image_signature(img, public_key)
         return jsonify({
             'status': 'verified' if verified else 'not_found',
             'message': 'Signature verified!' if verified else 'Signature verification failed'
@@ -78,9 +78,10 @@ def sign_post():
         private_key = RSA.import_key(text_file.read().decode('utf-8'))
         img = Image.open(image_file)
         hash = get_hash_from_image(img)
-        signer = pkcs1_15.new(private_key)
-        signature = signer.sign(hash)
-        add_text_as_metadata(img, signature, str(image_file.filename))
+        print(hash)
+        signature = get_signature_from_hash(hash, private_key)
+        print(signature)
+        save_image_with_metadata(img, signature, str(image_file.filename))
         return send_file(f"uploads/signed_{image_file.filename}", as_attachment=True, download_name=f"signed_{image_file.filename}", mimetype=f'image/{img.format}', max_age=0)
         
     except Exception as e:
